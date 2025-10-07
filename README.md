@@ -1,4 +1,4 @@
-# MicroLad
+# MicroLad (updated)
 
 ![MicroLad workflow](images/MicroLad.png)
 
