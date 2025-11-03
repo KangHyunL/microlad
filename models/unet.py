@@ -1,10 +1,14 @@
+"""
+Time-conditional UNet for latent diffusion
+"""
 import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from ..models.blocks import ResidualBlock, AttentionBlock
+
 
 class TimeEmbedding(nn.Module):
+    """Sinusoidal time embedding with MLP"""
     def __init__(self, dim):
         super().__init__()
         self.dim = dim
@@ -22,7 +26,9 @@ class TimeEmbedding(nn.Module):
         h = self.act2(self.lin2(h))
         return h
 
+
 class ResidualBlockUNet(nn.Module):
+    """Residual block with time conditioning"""
     def __init__(self, in_ch, out_ch, time_dim):
         super().__init__()
         self.skip     = nn.Conv2d(in_ch, out_ch, 1) if in_ch != out_ch else nn.Identity()
@@ -37,7 +43,9 @@ class ResidualBlockUNet(nn.Module):
         h = F.silu(self.conv2(self.norm2(h)))
         return h + self.skip(x)
 
+
 class SelfAttention(nn.Module):
+    """Self-attention layer"""
     def __init__(self, ch):
         super().__init__()
         self.norm = nn.GroupNorm(min(16, ch), ch)
@@ -53,7 +61,11 @@ class SelfAttention(nn.Module):
         o    = (attn @ v).permute(0,2,1)
         return x + self.proj(o).view(b, c, h, w)
 
+
 class TimeUNet(nn.Module):
+    """
+    Time-conditional U-Net for noise prediction in latent space
+    """
     def __init__(self, latent_ch, base_ch=128, time_dim=64):
         super().__init__()
         self.time_emb   = TimeEmbedding(time_dim)
@@ -85,6 +97,3 @@ class TimeUNet(nn.Module):
         d1 = self.dec1(torch.cat([self.up1(d2), e1], 1), te)
         return self.out(d1)
 
-# ----------------------------------------
-# Training loop with intermediate saves and final latent dumps
-# ----------------------------------------

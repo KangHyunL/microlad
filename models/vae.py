@@ -1,12 +1,11 @@
-import math
+"""
+VAE architecture for microstructure generation
+"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision.transforms import functional as TF
-from torchvision.utils      import save_image
-from pytorch_msssim import ssim
 
-# ──────────────────── Residual & Attention blocks ─────────────────────
+
 class ResidualBlock(nn.Module):
     def __init__(self, channels, num_groups=16):
         super().__init__()
@@ -22,6 +21,7 @@ class ResidualBlock(nn.Module):
         h = self.gn2(self.conv2(h))
         return self.act2(x + h)
 
+
 class AttentionBlock(nn.Module):
     def __init__(self, channels):
         super().__init__()
@@ -36,11 +36,12 @@ class AttentionBlock(nn.Module):
         q = q.view(b, c, -1).permute(0, 2, 1)
         k = k.view(b, c, -1)
         v = v.view(b, c, -1).permute(0, 2, 1)
-        attn = torch.bmm(q, k) / math.sqrt(c)
+        attn = torch.bmm(q, k) / torch.sqrt(torch.tensor(c, dtype=torch.float32))
         attn = torch.softmax(attn, dim=-1)
         out = torch.bmm(attn, v)
         out = out.permute(0, 2, 1).view(b, c, h, w)
         return x + self.proj_out(out)
+
 
 class DownBlock(nn.Module):
     def __init__(self, in_ch, out_ch):
@@ -50,10 +51,12 @@ class DownBlock(nn.Module):
         self.down = nn.Conv2d(in_ch, out_ch, kernel_size=4, stride=2, padding=1)
         self.gn   = nn.GroupNorm(16, out_ch)
         self.act  = nn.SiLU(inplace=True)
+
     def forward(self, x):
         x = self.res1(x)
         x = self.res2(x)
         return self.act(self.gn(self.down(x)))
+
 
 class UpBlock(nn.Module):
     def __init__(self, in_ch, out_ch):
@@ -63,15 +66,21 @@ class UpBlock(nn.Module):
         self.up   = nn.ConvTranspose2d(in_ch, out_ch, kernel_size=4, stride=2, padding=1)
         self.gn   = nn.GroupNorm(16, out_ch)
         self.act  = nn.SiLU(inplace=True)
+
     def forward(self, x):
         x = self.res1(x)
         x = self.res2(x)
         return self.act(self.gn(self.up(x)))
 
+
 class CustomVAE(nn.Module):
+    """
+    Variational Autoencoder for microstructure images
+    Encodes 64×64 images to 16×16 latent space with 4 channels
+    """
     def __init__(self, latent_ch=4):
         super().__init__()
-        # encoder: 64→32→16
+        # Encoder: 64→32→16
         self.conv_in = nn.Conv2d(1, 128, kernel_size=3, padding=1)
         self.down1   = DownBlock(128, 128)
         self.down2   = DownBlock(128, 256)
@@ -80,7 +89,8 @@ class CustomVAE(nn.Module):
         self.res2    = ResidualBlock(256)
         self.to_mu     = nn.Conv2d(256, latent_ch, kernel_size=1)
         self.to_logvar = nn.Conv2d(256, latent_ch, kernel_size=1)
-        # decoder: 16→32→64
+        
+        # Decoder: 16→32→64
         self.conv_z  = nn.Conv2d(latent_ch, 256, kernel_size=3, padding=1)
         self.res3    = ResidualBlock(256)
         self.attn2   = AttentionBlock(256)
@@ -90,18 +100,18 @@ class CustomVAE(nn.Module):
         self.conv_out = nn.Conv2d(64, 1, kernel_size=3, padding=1)
         self.act_out  = nn.Sigmoid()
 
-    def encode(self, x):  # x ∈ [-1,1]
+    def encode(self, x):
+        """Encode image to latent distribution parameters"""
         h = self.conv_in(x)
         h = self.down1(h)
         h = self.down2(h)
         h = self.res1(h)
         h = self.attn1(h)
         h = self.res2(h)
-        mu     = self.to_mu(h)
-        logvar = self.to_logvar(h)
-        return mu, logvar
+        return self.to_mu(h), self.to_logvar(h)
 
-    def decode(self, z):  # returns ∈ [0,1]
+    def decode(self, z):
+        """Decode latent to image"""
         h = self.conv_z(z)
         h = self.res3(h)
         h = self.attn2(h)
@@ -110,7 +120,9 @@ class CustomVAE(nn.Module):
         h = self.up2(h)
         return self.act_out(self.conv_out(h))
 
+
 def reparameterize(mu, logvar):
+    """Reparameterization trick for VAE"""
     std = (0.5 * logvar).exp()
     eps = torch.randn_like(std)
     return mu + eps * std

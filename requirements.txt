@@ -1,0 +1,27 @@
+# MicroLAD Dependencies
+
+# Core deep learning
+torch>=1.13.0
+torchvision>=0.14.0
+
+# Scientific computing
+numpy>=1.21.0
+scipy>=1.7.0
+
+# Visualization
+matplotlib>=3.5.0
+pyvista>=0.37.0
+
+# Image processing
+tifffile>=2021.11.2
+Pillow>=9.0.0
+
+# Metrics
+pytorch-msssim>=0.2.1
+
+# Progress bars
+tqdm>=4.62.0
+
+# Optional: CUDA toolkit (install via conda)
+# cudatoolkit=11.7
+
