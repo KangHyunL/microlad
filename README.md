@@ -40,6 +40,7 @@ python generate.py \
     --n_volumes 10
 ```
 
+
 ## Complete Workflow
 
 ### 1. Compute Training Statistics
@@ -86,3 +87,6 @@ python generate.py \
     --vf_targets "0:0.35,0.5:0.28,1:0.37" \
     --n_volumes 10
 ```
+
+
+It is worth noting that the results presented in the paper employed a custom balancer for weight factors to balance the gradients used in updating the microstructure. However, since this balancer was specifically tuned for a particular microstructure, the shared version of the code applies SDS and guidance without it, allowing users to freely adjust the weight factors. To reproduce results similar to those in the paper, use a guidance weight factor in the range of 10⁴–10⁵.
