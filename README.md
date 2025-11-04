@@ -7,7 +7,7 @@
 
 ## Quick Start
 
-### Using Pre-trained Weights (Recommended)
+### Using Pre-trained Weights
 
 ```python
 # Download from Hugging Face
