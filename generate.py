@@ -1,5 +1,5 @@
 """
-MicroLAD: 3D Microstructure Generation with Physics-Informed Latent Diffusion
+MicroLAD: Inverse-Controlled 2D-to-3D Microstructure Generation
 
 Main generation script
 """
@@ -337,4 +337,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
