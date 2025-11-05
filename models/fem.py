@@ -33,7 +33,11 @@ class TorchFEMMesh(nn.Module):
         # Reference shape function gradients for linear triangle
         Dhat = np.array([[-1,-1],[1,0],[0,1]], dtype=float)
 
-        # Build element connectivity (2 triangles per quad cell)
+        # Build element connectivity (2 triangles per quadrilateral cell)
+        # The original paper used a rectangular mesh, but for simplicity, a triangular mesh version is provided here.
+        # The rectangular mesh version and a more efficient FEM solver will be added soon.
+
+        
         elems = []
         for j in range(M):
             for i in range(N):
@@ -154,4 +158,5 @@ class TorchFEMMesh(nn.Module):
         Deff = (sigma_e * sq * self.elem_area).sum()
         
         return Deff
+
 
